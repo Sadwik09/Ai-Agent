@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-agent
+  template:
+    metadata:
+      labels:
+        app: ai-agent
+    spec:
+      containers:
+      - name: ai-agent
+        image: ${DOCKER_REGISTRY}/ai-agent:latest
+        ports:
+        - containerPort: 8501  # Streamlit
+        - containerPort: 7860  # Gradio
+        env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-agent-secrets
+              key: openai-api-key
+        - name: GEMINI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-agent-secrets
+              key: gemini-api-key
+        - name: KAGGLE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: ai-agent-secrets
+              key: kaggle-username
+        - name: KAGGLE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-agent-secrets
+              key: kaggle-key
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: models-volume
+          mountPath: /app/models
+        - name: results-volume
+          mountPath: /app/results
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: ai-agent-data-pvc
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: ai-agent-models-pvc
+      - name: results-volume
+        persistentVolumeClaim:
+          claimName: ai-agent-results-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: ai-agent-logs-pvc 
